@@ -1,6 +1,8 @@
 package TCPchat;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.util.HashMap;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -16,19 +18,28 @@ import javafx.stage.Stage;
 
 public class ChatServer extends Application {
 
+    HashMap<String, Socket> clients = new HashMap<String, Socket>();
+    boolean acceptingClients = true;
+
+    //server log and user list
     TextArea chatLogArea = new TextArea();
     TextArea userListArea = new TextArea();
 
     public ChatServer() throws IOException {
-
+        this.log("Opening client listener");
+        Thread clientListener = new Thread(new ClientListener(this));
+        clientListener.start();
     }
 
     public void log(String message) {
-        this.chatLogArea.appendText(message);
+        this.chatLogArea.appendText(message + "\n");
     }
 
     public static void main(String[] args) throws IOException {
         launch(args);
+
+        ChatServer server = new ChatServer();
+
     }
 
     @Override
