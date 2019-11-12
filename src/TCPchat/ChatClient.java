@@ -1,5 +1,8 @@
 package TCPchat;
 
+import java.io.*;
+import java.net.*;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,13 +14,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-import java.net.Socket;
-
 public class ChatClient extends Application {
 
     String username;
     boolean loggedIn = false;
+    Socket clientSocket;
 
     //client log and user list
     TextArea chatLogArea = new TextArea();
@@ -25,6 +26,10 @@ public class ChatClient extends Application {
 
     public ChatClient() throws IOException {
 
+    }
+
+    public void log(String message) {
+        this.chatLogArea.appendText(message + "\n");
     }
 
     public static void main(String[] args) throws IOException {
@@ -94,9 +99,29 @@ public class ChatClient extends Application {
         usernameField.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 //validate username and change scene
-                username = usernameField.getText();
-                
-                window.setScene(clientScene);
+                try {
+                    Message msg;
+                    clientSocket = new Socket("localhost", 5000);
+                    username = usernameField.getText();
+
+                    //form username request and send
+                    msg = new Message(Message.REQUEST_LOGIN, username);
+                    Message.writeMessage(msg, clientSocket);
+
+                    //wait for response and parse
+                    msg = Message.readMessage(clientSocket);
+
+                    //login on successful username choice
+                    if (msg.getMsgType() == Message.RESPONSE_LOGIN && msg.getSuccess()) {
+                        window.setScene(clientScene);
+                        this.log("Connected to server");
+
+
+                    }
+
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
             }
         });
     }

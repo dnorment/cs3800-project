@@ -1,7 +1,7 @@
 package TCPchat;
 
-import java.io.IOException;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 import java.util.HashMap;
 
 import javafx.application.Application;
@@ -19,6 +19,8 @@ import javafx.stage.Stage;
 public class ChatServer extends Application {
 
     HashMap<String, Socket> clients = new HashMap<String, Socket>();
+    ServerSocket serverSocket;
+
     boolean acceptingClients = true;
 
     //server log and user list
@@ -26,9 +28,28 @@ public class ChatServer extends Application {
     TextArea userListArea = new TextArea();
 
     public ChatServer() throws IOException {
+        this.log("Opening server socket on port 5000");
+        serverSocket = new ServerSocket(5000);
         this.log("Opening client listener");
-        Thread clientListener = new Thread(new ClientListener(this));
-        clientListener.start();
+        Thread listenerThread = new Thread(new ListenerThread(this));
+        listenerThread.start();
+    }
+
+    public boolean acceptClient(String username, Socket client) {
+        //check each username and add client to userlist if no match
+        for (String u : this.chatLogArea.getText().split("\n")) {
+            if (u.equals(username)) {
+                return false;
+            }
+        }
+        this.newUsername(username);
+        this.log("Accepted client " + username);
+        this.clients.put(username, client);
+        return true;
+    }
+
+    public void newUsername(String username) {
+        this.userListArea.appendText(username + "\n");
     }
 
     public void log(String message) {
@@ -39,7 +60,6 @@ public class ChatServer extends Application {
         launch(args);
 
         ChatServer server = new ChatServer();
-
     }
 
     @Override
