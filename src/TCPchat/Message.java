@@ -56,7 +56,7 @@ public class Message implements Serializable {
         }
     }
 
-    //type 1: REQUEST_LOGIN
+    //type 1, 3, 4, 5: REQUEST_LOGIN, USER_CONNECTED, USER_DISCONNECTED, CHAT_MESSAGE
     public Message(int type, String msg) {
         this(type, msg, false);
     }

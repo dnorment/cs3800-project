@@ -29,5 +29,22 @@ public class ClientListener implements Runnable {
         msg = new Message(Message.RESPONSE_LOGIN, login);
         Message.writeMessage(msg, this.clientSocket);
         this.chatServer.log("Responding to client with login success");
+
+        while (true) {
+            msg = Message.readMessage(this.clientSocket);
+            this.handleMessage(msg);
+        }
+    }
+
+    private void handleMessage(Message msg) {
+        int type = msg.getMsgType();
+        switch (type) {
+            case Message.USER_DISCONNECTED:
+                break;
+            case Message.CHAT_MESSAGE:
+                break;
+            default:
+                System.out.println("Error reading message from client");
+        }
     }
 }

@@ -36,6 +36,12 @@ public class ChatClient extends Application {
         launch(args);
 
         ChatClient client = new ChatClient();
+
+        while (client.loggedIn) {
+
+            Message msg = Message.readMessage(client.clientSocket);
+            client.handle(msg);
+        }
     }
 
     @Override
@@ -62,7 +68,9 @@ public class ChatClient extends Application {
         //main client window
         //setup elements
         Label chatLogLabel = new Label("Chat log");
-        VBox chatLogVBox = new VBox(5, chatLogLabel, chatLogArea);
+        TextField chatField = new TextField();
+        chatField.setPromptText("Enter a message and press ENTER to send (. to exit)");
+        VBox chatLogVBox = new VBox(5, chatLogLabel, chatLogArea, chatField);
 
         Label userListLabel = new Label("User list");
         VBox userListVBox = new VBox(5, userListLabel, userListArea);
@@ -114,9 +122,8 @@ public class ChatClient extends Application {
                     //login on successful username choice
                     if (msg.getMsgType() == Message.RESPONSE_LOGIN && msg.getSuccess()) {
                         window.setScene(clientScene);
+                        loggedIn = true;
                         this.log("Connected to server");
-
-
                     }
 
                 } catch (IOException e) {
@@ -124,5 +131,41 @@ public class ChatClient extends Application {
                 }
             }
         });
+
+        //read chat and send to server
+        chatField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                String text = chatField.getText();
+                chatField.clear();
+
+                if (text.equals(".")) {
+                    Message msg;
+                    msg = new Message(Message.USER_DISCONNECTED, username);
+                    Message.writeMessage(msg, clientSocket);
+                    loggedIn = false;
+                    window.close();
+                } else {
+                    Message msg;
+                    msg = new Message(Message.CHAT_MESSAGE, text);
+                    Message.writeMessage(msg, clientSocket);
+                }
+            }
+        });
+    }
+
+    public void handle(Message msg) {
+        int type = msg.getMsgType();
+        switch(type) {
+            case Message.USER_CONNECTED:
+                break;
+            case Message.USER_DISCONNECTED:
+                break;
+            case Message.CHAT_MESSAGE:
+                break;
+            case Message.UPDATE_USERS:
+                break;
+            default:
+                System.out.println("Error handling message from server");
+        }
     }
 }
