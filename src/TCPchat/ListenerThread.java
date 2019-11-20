@@ -5,8 +5,7 @@ import java.net.Socket;
 
 public class ListenerThread implements Runnable {
 
-    ChatServer chatServer;
-    Socket clientSocket;
+    private ChatServer chatServer;
 
     public ListenerThread(ChatServer chatServer) {
         this.chatServer = chatServer;
@@ -14,10 +13,10 @@ public class ListenerThread implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (this.chatServer.acceptingClients) {
             try {
-                clientSocket = this.chatServer.serverSocket.accept();
-                Thread clientListener = new Thread(new ClientListener(this.chatServer, this.clientSocket));
+                Socket clientSocket = this.chatServer.serverSocket.accept();
+                Thread clientListener = new Thread(new ClientListener(this.chatServer, clientSocket));
                 clientListener.start();
             } catch (IOException e) {
                 System.out.println(e.getMessage());

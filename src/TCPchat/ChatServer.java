@@ -3,6 +3,7 @@ package TCPchat;
 import java.io.*;
 import java.net.*;
 import java.util.HashMap;
+import java.util.Map;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -18,14 +19,14 @@ import javafx.stage.Stage;
 
 public class ChatServer extends Application {
 
-    HashMap<String, Socket> clients = new HashMap<String, Socket>();
+    private HashMap<String, Socket> clients = new HashMap<String, Socket>();
     ServerSocket serverSocket;
 
     boolean acceptingClients = true;
 
     //server log and user list
-    TextArea chatLogArea = new TextArea();
-    TextArea userListArea = new TextArea();
+    private TextArea chatLogArea = new TextArea();
+    private TextArea userListArea = new TextArea();
 
     public ChatServer() throws IOException {
         this.log("Opening server socket on port 5000");
@@ -58,14 +59,19 @@ public class ChatServer extends Application {
 
     public static void main(String[] args) throws IOException {
         launch(args);
+        new ChatServer();
+    }
 
-        ChatServer server = new ChatServer();
+    public void dispatch(Message msg) {
+        for (Map.Entry<String,Socket> e : clients.entrySet()) {
+             if (msg.getFromUser() != null && !msg.getFromUser().equals(e.getKey())) { //don't send to sender
+                 Message.writeMessage(msg, e.getValue());
+             }
+        }
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        Stage window = primaryStage;
-
+    public void start(Stage window) throws Exception {
         //setup elements
         Label chatLogLabel = new Label("Chat log");
         VBox chatLogVBox = new VBox(5, chatLogLabel, chatLogArea);

@@ -16,15 +16,15 @@ import javafx.stage.Stage;
 
 public class ChatClient extends Application {
 
-    String username;
-    boolean loggedIn = false;
-    Socket clientSocket;
+    private String username;
+    private boolean loggedIn = false;
+    public Socket clientSocket;
 
     //client log and user list
-    TextArea chatLogArea = new TextArea();
-    TextArea userListArea = new TextArea();
+    private TextArea chatLogArea = new TextArea();
+    private TextArea userListArea = new TextArea();
 
-    public ChatClient() throws IOException {
+    public ChatClient() {
 
     }
 
@@ -36,11 +36,15 @@ public class ChatClient extends Application {
         launch(args);
 
         ChatClient client = new ChatClient();
+
+        while (true) {
+            Message msg = Message.readMessage(client.clientSocket);
+            client.handle(msg);
+        }
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        Stage window = primaryStage;
+    public void start(Stage window) throws Exception {
         //login client window
         //setup elements
         Label projectTitle = new Label("CS 3800 Project");
@@ -62,7 +66,9 @@ public class ChatClient extends Application {
         //main client window
         //setup elements
         Label chatLogLabel = new Label("Chat log");
-        VBox chatLogVBox = new VBox(5, chatLogLabel, chatLogArea);
+        TextField chatField = new TextField();
+        chatField.setPromptText("Enter a message and press ENTER to send (. to exit)");
+        VBox chatLogVBox = new VBox(5, chatLogLabel, chatLogArea, chatField);
 
         Label userListLabel = new Label("User list");
         VBox userListVBox = new VBox(5, userListLabel, userListArea);
@@ -114,9 +120,19 @@ public class ChatClient extends Application {
                     //login on successful username choice
                     if (msg.getMsgType() == Message.RESPONSE_LOGIN && msg.getSuccess()) {
                         window.setScene(clientScene);
+                        loggedIn = true;
                         this.log("Connected to server");
 
-
+                        Thread handleThread = new Thread() { //start thread to listen for messages, pass to handler
+                            public void run() {
+                                while (true) {
+                                    Message msg = Message.readMessage(clientSocket);
+                                    handle(msg);
+                                }
+                            }
+                        };
+                        handleThread.setDaemon(true); //don't let thread keep JVM alive on exit
+                        handleThread.start();
                     }
 
                 } catch (IOException e) {
@@ -124,5 +140,46 @@ public class ChatClient extends Application {
                 }
             }
         });
+
+        //read chat and send to server
+        chatField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                String text = chatField.getText();
+                chatField.clear();
+
+                if (text.equals(".")) {
+                    Message msg;
+                    msg = new Message(Message.USER_DISCONNECTED, username);
+                    Message.writeMessage(msg, clientSocket);
+                    loggedIn = false;
+                    window.close();
+                } else if (!text.equals("")){
+                    this.log(String.format("%s: %s", username, text));
+                    Message msg;
+                    msg = new Message(Message.CHAT_MESSAGE, text, username);
+                    Message.writeMessage(msg, clientSocket);
+                }
+            }
+        });
+    }
+
+    private void handle(Message msg) {
+        int type = msg.getMsgType();
+        switch(type) {
+            case Message.USER_CONNECTED:
+                this.log(String.format("User %s connected", msg.getMsg()));
+                this.userListArea.appendText(msg.getMsg() + "\n");
+                break;
+            case Message.USER_DISCONNECTED:
+                this.log(String.format("User %s disconnected", msg.getMsg()));
+                break;
+            case Message.CHAT_MESSAGE:
+                this.log(String.format("%s: %s", msg.getFromUser(), msg.getMsg()));
+                break;
+            case Message.UPDATE_USERS:
+                break;
+            default:
+                System.out.println("Error handling message from server");
+        }
     }
 }
