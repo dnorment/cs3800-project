@@ -16,15 +16,15 @@ import javafx.stage.Stage;
 
 public class ChatClient extends Application {
 
-    String username;
-    boolean loggedIn = false;
-    Socket clientSocket;
+    private String username;
+    private boolean loggedIn = false;
+    public Socket clientSocket;
 
     //client log and user list
-    TextArea chatLogArea = new TextArea();
-    TextArea userListArea = new TextArea();
+    private TextArea chatLogArea = new TextArea();
+    private TextArea userListArea = new TextArea();
 
-    public ChatClient() throws IOException {
+    public ChatClient() {
 
     }
 
@@ -37,16 +37,14 @@ public class ChatClient extends Application {
 
         ChatClient client = new ChatClient();
 
-        while (client.loggedIn) {
-
+        while (true) {
             Message msg = Message.readMessage(client.clientSocket);
             client.handle(msg);
         }
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        Stage window = primaryStage;
+    public void start(Stage window) throws Exception {
         //login client window
         //setup elements
         Label projectTitle = new Label("CS 3800 Project");
@@ -124,6 +122,17 @@ public class ChatClient extends Application {
                         window.setScene(clientScene);
                         loggedIn = true;
                         this.log("Connected to server");
+
+                        Thread handleThread = new Thread() { //start thread to listen for messages, pass to handler
+                            public void run() {
+                                while (true) {
+                                    Message msg = Message.readMessage(clientSocket);
+                                    handle(msg);
+                                }
+                            }
+                        };
+                        handleThread.setDaemon(true); //don't let thread keep JVM alive on exit
+                        handleThread.start();
                     }
 
                 } catch (IOException e) {
@@ -144,23 +153,28 @@ public class ChatClient extends Application {
                     Message.writeMessage(msg, clientSocket);
                     loggedIn = false;
                     window.close();
-                } else {
+                } else if (!text.equals("")){
+                    this.log(String.format("%s: %s", username, text));
                     Message msg;
-                    msg = new Message(Message.CHAT_MESSAGE, text);
+                    msg = new Message(Message.CHAT_MESSAGE, text, username);
                     Message.writeMessage(msg, clientSocket);
                 }
             }
         });
     }
 
-    public void handle(Message msg) {
+    private void handle(Message msg) {
         int type = msg.getMsgType();
         switch(type) {
             case Message.USER_CONNECTED:
+                this.log(String.format("User %s connected", msg.getMsg()));
+                this.userListArea.appendText(msg.getMsg() + "\n");
                 break;
             case Message.USER_DISCONNECTED:
+                this.log(String.format("User %s disconnected", msg.getMsg()));
                 break;
             case Message.CHAT_MESSAGE:
+                this.log(String.format("%s: %s", msg.getFromUser(), msg.getMsg()));
                 break;
             case Message.UPDATE_USERS:
                 break;

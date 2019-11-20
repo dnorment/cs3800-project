@@ -19,6 +19,7 @@ public class Message implements Serializable {
 
     private int msgType;
     private String msg;
+    private String fromUser;
     private boolean success;
 
     public int getMsgType() {
@@ -33,43 +34,51 @@ public class Message implements Serializable {
         return this.msg;
     }
 
-    public static Message readMessage(Socket client) {
+    public String getFromUser() {
+        return this.fromUser;
+    }
+
+    static Message readMessage(Socket client) {
         Message msg = null;
         try {
             ObjectInputStream inFromClient = new ObjectInputStream(client.getInputStream());
             msg = (Message)inFromClient.readObject();
-            inFromClient.reset();
         } catch (ClassNotFoundException | IOException e) {
             System.out.println(e.getMessage());
         }
         return msg;
     }
 
-    public static void writeMessage(Message msg, Socket client) {
+    static void writeMessage(Message msg, Socket client) {
         try {
             ObjectOutputStream outToClient = new ObjectOutputStream(client.getOutputStream());
             outToClient.writeObject(msg);
             outToClient.flush();
-            outToClient.reset();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    //type 1, 3, 4, 5: REQUEST_LOGIN, USER_CONNECTED, USER_DISCONNECTED, CHAT_MESSAGE
+    //type 1, 3, 4: REQUEST_LOGIN, USER_CONNECTED, USER_DISCONNECTED
     public Message(int type, String msg) {
-        this(type, msg, false);
+        this(type, msg, null,false);
     }
 
     //type 2: RESPONSE_LOGIN
     public Message(int type, boolean success) {
-        this(type, null, success);
+        this(type, null, null, success);
+    }
+
+    //type 5: CHAT_MESSAGE
+    public Message(int type, String msg, String fromUser) {
+        this(type, msg, fromUser, false);
     }
 
     //type ?: general message
-    public Message(int type, String msg, boolean success) {
+    private Message(int type, String msg, String fromUser, boolean success) {
         this.msgType = type;
         this.msg = msg;
+        this.fromUser = fromUser;
         this.success = success;
     }
 }
