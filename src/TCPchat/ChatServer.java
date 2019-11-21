@@ -2,6 +2,7 @@ package TCPchat;
 
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,8 +26,8 @@ public class ChatServer extends Application {
     boolean acceptingClients = true;
 
     //server log and user list
-    private TextArea chatLogArea = new TextArea();
-    private TextArea userListArea = new TextArea();
+    TextArea chatLogArea = new TextArea();
+    TextArea userListArea = new TextArea();
 
     public ChatServer() throws IOException {
         this.log("Opening server socket on port 5000");
@@ -38,19 +39,16 @@ public class ChatServer extends Application {
 
     public boolean acceptClient(String username, Socket client) {
         //check each username and add client to userlist if no match
-        for (String u : this.chatLogArea.getText().split("\n")) {
+        for (String u : this.userListArea.getText().split("\n")) {
             if (u.equals(username)) {
                 return false;
             }
         }
-        this.newUsername(username);
+        this.newUser(username); //add client to userlist
         this.log("Accepted client " + username);
-        this.clients.put(username, client);
-        return true;
-    }
 
-    public void newUsername(String username) {
-        this.userListArea.appendText(username + "\n");
+        this.clients.put(username, client); //add new client to map
+        return true;
     }
 
     public void log(String message) {
@@ -64,10 +62,39 @@ public class ChatServer extends Application {
 
     public void dispatch(Message msg) {
         for (Map.Entry<String,Socket> e : clients.entrySet()) {
-             if (msg.getFromUser() != null && !msg.getFromUser().equals(e.getKey())) { //don't send to sender
+             if (!msg.getFromUser().equals(e.getKey())) { //don't send to sender
                  Message.writeMessage(msg, e.getValue());
              }
         }
+    }
+    
+    private void newUser(String name) {
+        this.userListArea.appendText(name + "\n");
+        this.sortUsers();
+    }
+
+    void userLeft(String name) {
+        this.clients.remove(name);
+        String[] users = this.userListArea.getText().split("\n");
+        this.userListArea.clear();
+        String updatedUsers = "";
+        for (String u : users) {
+            if (!u.equals(name)) {
+                updatedUsers += u + "\n";
+            }
+        }
+        this.userListArea.setText(updatedUsers);
+        this.sortUsers();
+    }
+
+    private void sortUsers() {
+        String[] users = this.userListArea.getText().split("\n");
+        Arrays.sort(users);
+        String updatedUsers = "";
+        for (String u : users) {
+            updatedUsers += u + "\n";
+        }
+        this.userListArea.setText(updatedUsers);
     }
 
     @Override

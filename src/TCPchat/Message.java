@@ -15,7 +15,8 @@ public class Message implements Serializable {
     static final int USER_CONNECTED = 3;
     static final int USER_DISCONNECTED = 4;
     static final int CHAT_MESSAGE = 5;
-    static final int UPDATE_USERS = 6;
+    static final int REQUEST_UPDATE_USERS = 6;
+    static final int RESPONSE_UPDATE_USERS = 7;
 
     private int msgType;
     private String msg;
@@ -59,7 +60,16 @@ public class Message implements Serializable {
         }
     }
 
-    //type 1, 3, 4: REQUEST_LOGIN, USER_CONNECTED, USER_DISCONNECTED
+    static void close(Socket client) {
+        try {
+            client.getOutputStream().flush();
+            client.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    //type 1, 3, 4, 7: REQUEST_LOGIN, USER_CONNECTED, USER_DISCONNECTED, RESPONSE_UPDATE_USERS
     public Message(int type, String msg) {
         this(type, msg, null,false);
     }
@@ -72,6 +82,11 @@ public class Message implements Serializable {
     //type 5: CHAT_MESSAGE
     public Message(int type, String msg, String fromUser) {
         this(type, msg, fromUser, false);
+    }
+
+    //type 6: REQUEST_UPDATE_USERS
+    public Message(int type) {
+        this(type, null, null, false);
     }
 
     //type ?: general message
