@@ -79,10 +79,11 @@ public class ChatServer extends Application {
         this.userListArea.clear();
         String updatedUsers = "";
         for (String u : users) {
-            if (!u.equals(name)) {
+            if (!u.equals(name) && u.length() > 0) {
                 updatedUsers += u + "\n";
             }
         }
+
         this.userListArea.setText(updatedUsers);
         this.sortUsers();
     }
@@ -90,11 +91,7 @@ public class ChatServer extends Application {
     private void sortUsers() {
         String[] users = this.userListArea.getText().split("\n");
         Arrays.sort(users);
-        String updatedUsers = "";
-        for (String u : users) {
-            updatedUsers += u + "\n";
-        }
-        this.userListArea.setText(updatedUsers);
+        this.userListArea.setText(String.join("\n", users));
     }
 
     @Override
