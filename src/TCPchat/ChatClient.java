@@ -2,6 +2,7 @@ package TCPchat;
 
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -17,7 +18,6 @@ import javafx.stage.Stage;
 public class ChatClient extends Application {
 
     private String username;
-    private boolean loggedIn = false;
     public Socket clientSocket;
 
     //client log and user list
@@ -36,11 +36,6 @@ public class ChatClient extends Application {
         launch(args);
 
         ChatClient client = new ChatClient();
-
-        while (true) {
-            Message msg = Message.readMessage(client.clientSocket);
-            client.handle(msg);
-        }
     }
 
     @Override
@@ -103,7 +98,7 @@ public class ChatClient extends Application {
 
         //get username and login on text submit
         usernameField.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER) {
+            if (event.getCode() == KeyCode.ENTER && !usernameField.getText().equals("")) {
                 //validate username and change scene
                 try {
                     Message msg;
@@ -120,8 +115,15 @@ public class ChatClient extends Application {
                     //login on successful username choice
                     if (msg.getMsgType() == Message.RESPONSE_LOGIN && msg.getSuccess()) {
                         window.setScene(clientScene);
-                        loggedIn = true;
                         this.log("Connected to server");
+
+                        //inform other clients of new user
+                        msg = new Message(Message.USER_CONNECTED, username, username);
+                        Message.writeMessage(msg, clientSocket);
+
+                        //request updated user list
+                        msg = new Message(Message.REQUEST_UPDATE_USERS);
+                        Message.writeMessage(msg, clientSocket);
 
                         Thread handleThread = new Thread() { //start thread to listen for messages, pass to handler
                             public void run() {
@@ -147,15 +149,14 @@ public class ChatClient extends Application {
                 String text = chatField.getText();
                 chatField.clear();
 
+                Message msg;
                 if (text.equals(".")) {
-                    Message msg;
-                    msg = new Message(Message.USER_DISCONNECTED, username);
+                    msg = new Message(Message.USER_DISCONNECTED, username, username);
                     Message.writeMessage(msg, clientSocket);
-                    loggedIn = false;
+                    Message.close(clientSocket);
                     window.close();
-                } else if (!text.equals("")){
+                } else if (!text.equals("")) {
                     this.log(String.format("%s: %s", username, text));
-                    Message msg;
                     msg = new Message(Message.CHAT_MESSAGE, text, username);
                     Message.writeMessage(msg, clientSocket);
                 }
@@ -168,18 +169,47 @@ public class ChatClient extends Application {
         switch(type) {
             case Message.USER_CONNECTED:
                 this.log(String.format("User %s connected", msg.getMsg()));
-                this.userListArea.appendText(msg.getMsg() + "\n");
+                this.newUser(msg.getMsg());
                 break;
             case Message.USER_DISCONNECTED:
                 this.log(String.format("User %s disconnected", msg.getMsg()));
+                this.userLeft(msg.getMsg());
                 break;
             case Message.CHAT_MESSAGE:
                 this.log(String.format("%s: %s", msg.getFromUser(), msg.getMsg()));
                 break;
-            case Message.UPDATE_USERS:
+            case Message.RESPONSE_UPDATE_USERS:
+                this.userListArea.setText(msg.getMsg());
                 break;
             default:
                 System.out.println("Error handling message from server");
         }
+    }
+
+    private void newUser(String name) {
+        this.userListArea.appendText(name + "\n");
+        this.sortUsers();
+    }
+
+    void userLeft(String name) {
+        String[] users = this.userListArea.getText().split("\n");
+        String updatedUsers = "";
+        for (String u : users) {
+            if (!u.equals(name)) {
+                updatedUsers += u + "\n";
+            }
+        }
+        this.userListArea.setText(updatedUsers);
+        this.sortUsers();
+    }
+
+    private void sortUsers() {
+        String[] users = this.userListArea.getText().split("\n");
+        Arrays.sort(users);
+        String updatedUsers = "";
+        for (String u : users) {
+            updatedUsers += u + "\n";
+        }
+        this.userListArea.setText(updatedUsers);
     }
 }
