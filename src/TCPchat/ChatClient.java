@@ -2,7 +2,9 @@ package TCPchat;
 
 import java.io.*;
 import java.net.*;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -29,6 +31,9 @@ public class ChatClient extends Application {
     }
 
     public void log(String message) {
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+        this.chatLogArea.appendText("[" + formatter.format(date) + "] ");
         this.chatLogArea.appendText(message + "\n");
     }
 

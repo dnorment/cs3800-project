@@ -2,7 +2,9 @@ package TCPchat;
 
 import java.io.*;
 import java.net.*;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,6 +54,9 @@ public class ChatServer extends Application {
     }
 
     public void log(String message) {
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+        this.chatLogArea.appendText("[" + formatter.format(date) + "] ");
         this.chatLogArea.appendText(message + "\n");
     }
 
@@ -73,9 +78,10 @@ public class ChatServer extends Application {
         this.sortUsers();
     }
 
+
     void userLeft(String name) {
+        this.clients.remove(name);
         if (!this.clients.isEmpty()) {
-            this.clients.remove(name);
             String[] users = this.userListArea.getText().split("\n");
             this.userListArea.clear();
             String updatedUsers = "";
