@@ -98,7 +98,7 @@ public class ChatClient extends Application {
 
         //get username and login on text submit
         usernameField.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER && !usernameField.getText().equals("")) {
+            if (event.getCode() == KeyCode.ENTER && !usernameField.getText().equals("") && usernameField.getText().length() >= 3) {
                 //validate username and change scene
                 try {
                     Message msg;

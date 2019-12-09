@@ -74,24 +74,31 @@ public class ChatServer extends Application {
     }
 
     void userLeft(String name) {
-        this.clients.remove(name);
-        String[] users = this.userListArea.getText().split("\n");
-        this.userListArea.clear();
-        String updatedUsers = "";
-        for (String u : users) {
-            if (!u.equals(name) && u.length() > 0) {
-                updatedUsers += u + "\n";
+        if (!this.clients.isEmpty()) {
+            this.clients.remove(name);
+            String[] users = this.userListArea.getText().split("\n");
+            this.userListArea.clear();
+            String updatedUsers = "";
+            for (String u : users) {
+                if (!u.equals(name) && u.length() > 0) {
+                    updatedUsers += u + "\n";
+                }
             }
+            this.userListArea.setText(updatedUsers);
+            this.sortUsers();
+        } else {
+            this.userListArea.clear();
         }
-
-        this.userListArea.setText(updatedUsers);
-        this.sortUsers();
     }
 
     private void sortUsers() {
         String[] users = this.userListArea.getText().split("\n");
         Arrays.sort(users);
-        this.userListArea.setText(String.join("\n", users));
+        String updatedUsers = "";
+        for (String u : users) {
+            updatedUsers += u + "\n";
+        }
+        this.userListArea.setText(updatedUsers);
     }
 
     @Override
