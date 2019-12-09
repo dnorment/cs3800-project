@@ -17,6 +17,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+/**
+ * The main chat client application. It asks the user for a username and will refuse the connection if the name is taken. Starts an inline thread to listen for messages from the server.
+ */
 public class ChatClient extends Application {
 
     private String username;
@@ -26,10 +29,10 @@ public class ChatClient extends Application {
     private TextArea chatLogArea = new TextArea();
     private TextArea userListArea = new TextArea();
 
-    public ChatClient() {
-
-    }
-
+    /**
+     * Adds a log message to the chat box with a timestamp.
+     * @param message The message to add to the chat box.
+     */
     public void log(String message) {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
@@ -39,8 +42,7 @@ public class ChatClient extends Application {
 
     public static void main(String[] args) throws IOException {
         launch(args);
-
-        ChatClient client = new ChatClient();
+        new ChatClient();
     }
 
     @Override
@@ -169,33 +171,45 @@ public class ChatClient extends Application {
         });
     }
 
+    /**
+     * Handles messages from the server, with different behavior depending on the type of message.
+     * @param msg The Message to handle.
+     */
     private void handle(Message msg) {
         int type = msg.getMsgType();
         switch(type) {
-            case Message.USER_CONNECTED:
+            case Message.USER_CONNECTED: //a new user connects
                 this.log(String.format("User %s connected", msg.getMsg()));
                 this.newUser(msg.getMsg());
                 break;
-            case Message.USER_DISCONNECTED:
+            case Message.USER_DISCONNECTED: //a user disconnects
                 this.log(String.format("User %s disconnected", msg.getMsg()));
                 this.userLeft(msg.getMsg());
                 break;
-            case Message.CHAT_MESSAGE:
+            case Message.CHAT_MESSAGE: //a user sends a chat message
                 this.log(String.format("%s: %s", msg.getFromUser(), msg.getMsg()));
                 break;
-            case Message.RESPONSE_UPDATE_USERS:
+            case Message.RESPONSE_UPDATE_USERS: //received response from server with updated user list
                 this.userListArea.setText(msg.getMsg());
                 break;
             default:
                 System.out.println("Error handling message from server");
         }
     }
-
+    
+    /**
+     * Adds a user to the list of connected users, then sorts the list.
+     * @param name The name of the user to add to the connected user list,
+     */
     private void newUser(String name) {
         this.userListArea.appendText(name + "\n");
         this.sortUsers();
     }
 
+    /**
+     * Removes a client from the list of connected users, then updates the list area.
+     * @param name The name of the user to remove from the connected user list.
+     */
     void userLeft(String name) {
         String[] users = this.userListArea.getText().split("\n");
         String updatedUsers = "";
@@ -208,6 +222,9 @@ public class ChatClient extends Application {
         this.sortUsers();
     }
 
+    /**
+     * Sorts the list of connected users by name.
+     */
     private void sortUsers() {
         String[] users = this.userListArea.getText().split("\n");
         Arrays.sort(users);

@@ -6,17 +6,20 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
 
+/**
+ * The main communication method between server and client. Has different types of messages for different function handling.
+ */
 public class Message implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    static final int REQUEST_LOGIN = 1;
-    static final int RESPONSE_LOGIN = 2;
-    static final int USER_CONNECTED = 3;
-    static final int USER_DISCONNECTED = 4;
-    static final int CHAT_MESSAGE = 5;
-    static final int REQUEST_UPDATE_USERS = 6;
-    static final int RESPONSE_UPDATE_USERS = 7;
+    static final int REQUEST_LOGIN = 1; //request to login from client to server
+    static final int RESPONSE_LOGIN = 2; //response to login from server to client
+    static final int USER_CONNECTED = 3; //new user connected
+    static final int USER_DISCONNECTED = 4; //user left
+    static final int CHAT_MESSAGE = 5; //new message from user
+    static final int REQUEST_UPDATE_USERS = 6; //request updated user list from server
+    static final int RESPONSE_UPDATE_USERS = 7; //send updated user list to client
 
     private int msgType;
     private String msg;
@@ -39,6 +42,11 @@ public class Message implements Serializable {
         return this.fromUser;
     }
 
+    /**
+     * Attempts to read a Message object from a Socket.
+     * @param client The socket to read from.
+     * @return The Message if succeeded reading, else null.
+     */
     static Message readMessage(Socket client) {
         Message msg = null;
         try {
@@ -50,6 +58,11 @@ public class Message implements Serializable {
         return msg;
     }
 
+    /**
+     * Attempts to write a Message object to a Socket.
+     * @param msg The Message to write into the Socket.
+     * @param client The socket to write into.
+     */
     static void writeMessage(Message msg, Socket client) {
         try {
             ObjectOutputStream outToClient = new ObjectOutputStream(client.getOutputStream());
@@ -60,6 +73,10 @@ public class Message implements Serializable {
         }
     }
 
+    /**
+     * Closes the specified Socket after flushing.
+     * @param client The Socket to flush and close.
+     */
     static void close(Socket client) {
         try {
             client.getOutputStream().flush();
@@ -89,7 +106,7 @@ public class Message implements Serializable {
         this(type, null, null, false);
     }
 
-    //type ?: general message
+    //general message object
     private Message(int type, String msg, String fromUser, boolean success) {
         this.msgType = type;
         this.msg = msg;

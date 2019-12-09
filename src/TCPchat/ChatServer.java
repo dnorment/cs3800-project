@@ -20,17 +20,22 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+/**
+ * The main chat server class that holds the connected clients and starts the user interface for the server. Opens threads to listen for clients and handle messages.
+ */
 public class ChatServer extends Application {
 
-    private HashMap<String, Socket> clients = new HashMap<String, Socket>();
+    private HashMap<String, Socket> clients = new HashMap<String, Socket>(); //stores clients by Socket and their usernames
     ServerSocket serverSocket;
-
-    boolean acceptingClients = true;
 
     //server log and user list
     TextArea chatLogArea = new TextArea();
     TextArea userListArea = new TextArea();
 
+    /**
+     * Starts the chat server. Opens a ServerSocket and starts a ListenerThread for accepting client connections.
+     * @throws IOException
+     */
     public ChatServer() throws IOException {
         this.log("Opening server socket on port 5000");
         serverSocket = new ServerSocket(5000);
@@ -39,6 +44,12 @@ public class ChatServer extends Application {
         listenerThread.start();
     }
 
+    /**
+     * Checks if a client is already connected by name, and accepts the client if not. It then adds the client to the list of clients.
+     * @param username The usename of the client to accept.
+     * @param client The socket of the client to accept.
+     * @return True if the client is not already accepted and succeeds.
+     */
     public boolean acceptClient(String username, Socket client) {
         //check each username and add client to userlist if no match
         for (String u : this.userListArea.getText().split("\n")) {
@@ -53,6 +64,10 @@ public class ChatServer extends Application {
         return true;
     }
 
+    /**
+     * Adds a log message to the chat box with a timestamp.
+     * @param message The message to add to the chat box.
+     */
     public void log(String message) {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
@@ -62,9 +77,13 @@ public class ChatServer extends Application {
 
     public static void main(String[] args) throws IOException {
         launch(args);
-        new ChatServer();
+        new ChatServer(); //start server
     }
 
+    /**
+     * Relays the Message received to all connected clients except the sender.
+     * @param msg The Message to dispatch to clients.
+     */
     public void dispatch(Message msg) {
         for (Map.Entry<String,Socket> e : clients.entrySet()) {
              if (!msg.getFromUser().equals(e.getKey())) { //don't send to sender
@@ -73,12 +92,19 @@ public class ChatServer extends Application {
         }
     }
     
+    /**
+     * Adds a user to the list of connected users, then sorts the list.
+     * @param name The name of the user to add to the connected user list,
+     */
     private void newUser(String name) {
         this.userListArea.appendText(name + "\n");
         this.sortUsers();
     }
 
-
+    /**
+     * Removes a client from the list of connected users, then updates the list area.
+     * @param name The name of the user to remove from the connected user list.
+     */
     void userLeft(String name) {
         this.clients.remove(name);
         if (!this.clients.isEmpty()) {
@@ -97,6 +123,9 @@ public class ChatServer extends Application {
         }
     }
 
+    /**
+     * Sorts the list of connected users by name.
+     */
     private void sortUsers() {
         String[] users = this.userListArea.getText().split("\n");
         Arrays.sort(users);
